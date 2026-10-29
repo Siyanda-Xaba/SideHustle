@@ -4,6 +4,7 @@ const configuredObdUrl = process.env.EXPO_PUBLIC_OBD_API_URL?.replace(/\/$/, '')
 const obdCandidates = [
   configuredObdUrl,
   'http://127.0.0.1:5002',
+  'http://10.248.134.172:5002',
   'http://192.168.137.1:5002',
   'http://172.16.41.210:5002',
 ].filter(Boolean);
@@ -65,25 +66,29 @@ async function request(path, options = {}) {
 }
 
 async function getOrCreateApiVehicle(vehicle) {
-  const year = Number(vehicle?.year);
-  if (!vehicle?.make?.trim() || !vehicle?.model?.trim() || !Number.isInteger(year) || year < 1900 || !vehicle?.registration?.trim() || vehicle.registration === 'N/A') {
-    throw new Error('Complete the vehicle make, model, year, and registration in your vehicle profile before connecting to OBD.');
+  const make = vehicle?.make?.trim() || 'Workshop';
+  const model = vehicle?.model?.trim() || 'Vehicle';
+  let year = Number(vehicle?.year);
+  if (!Number.isInteger(year) || year < 1886 || year > new Date().getFullYear() + 1) {
+    year = 2024;
   }
+  const registration = (vehicle?.registration?.trim() && vehicle.registration !== 'N/A') ? vehicle.registration : 'TEST-CAR';
+
   const vehicles = await request('/api/v1/vehicles');
   const existing = vehicles.find((item) =>
-    item.make?.toLowerCase() === vehicle.make?.toLowerCase()
-    && item.model?.toLowerCase() === vehicle.model?.toLowerCase()
+    item.make?.toLowerCase() === make.toLowerCase()
+    && item.model?.toLowerCase() === model.toLowerCase()
     && Number(item.year) === year
-    && (!vehicle.registration || item.nickname === vehicle.registration),
+    && (!registration || item.nickname === registration),
   );
   if (existing) return existing;
   return request('/api/v1/vehicles', {
     method: 'POST',
     body: JSON.stringify({
-      make: vehicle.make,
-      model: vehicle.model,
+      make,
+      model,
       year,
-      nickname: vehicle.registration || undefined,
+      nickname: registration || undefined,
     }),
   });
 }

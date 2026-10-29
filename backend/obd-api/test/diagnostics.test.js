@@ -79,6 +79,36 @@ test("translates raw Bluetooth-adapter-style OBD responses", async () => {
     body.data.readings.map((reading) => reading.value),
     [1726, 60, 83],
   );
+
+  // CAN bus format with DTC count byte (43 01 03 00 00 00)
+  const canResponse = await fetch(`${baseUrl}/api/v1/diagnostics/translate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      vehicle: { make: "Test", model: "Vehicle", year: 2024 },
+      rawDtcResponse: "43 01 03 00 00 00",
+      rawResponses: ["41 0C 1A F8"],
+    }),
+  });
+  const canBody = await canResponse.json();
+  assert.equal(canResponse.status, 200);
+  assert.equal(canBody.data.summary.troubleCodeCount, 1);
+  assert.equal(canBody.data.problems[0].code, "P0300");
+
+  // Zero DTCs response (43 00)
+  const zeroDtcResponse = await fetch(`${baseUrl}/api/v1/diagnostics/translate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      vehicle: { make: "Test", model: "Vehicle", year: 2024 },
+      rawDtcResponse: "43 00",
+      rawResponses: ["41 0C 1A F8"],
+    }),
+  });
+  const zeroBody = await zeroDtcResponse.json();
+  assert.equal(zeroDtcResponse.status, 200);
+  assert.equal(zeroBody.data.summary.troubleCodeCount, 0);
+  assert.equal(zeroBody.data.problems.length, 0);
 });
 
 test("accepts the readings alias and rejects malformed OBD bytes cleanly", async () => {

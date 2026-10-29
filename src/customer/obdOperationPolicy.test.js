@@ -22,6 +22,7 @@ test('allows only approved read operations and PID parameters', () => {
 test('validates expected service, PID, byte count, and bounded responses', () => {
   const rpm = buildApprovedDiagnosticRequest('readLivePid', { pid: '0C' }, 'connected');
   assert.equal(validateApprovedResponse('010C\r41 0C 1A F8>', rpm), '41 0C 1A F8');
+  assert.equal(validateApprovedResponse('SEARCHING...\rBUS INIT: OK\r41 0C 1A F8>', rpm), '41 0C 1A F8');
   assert.throws(() => validateApprovedResponse('41 0C 1A', rpm), /incomplete/);
   assert.throws(() => validateApprovedResponse('44 0C 1A F8', rpm), /outside the approved/);
   assert.equal(validateApprovedResponse('NO DATA>', rpm), null);
@@ -31,6 +32,11 @@ test('validates expected service, PID, byte count, and bounded responses', () =>
     () => validateApprovedResponse('A'.repeat(obdDiagnosticPolicy.limits.responseCharacters + 1), rpm),
     /invalid or too large/,
   );
+
+  const dtcReq = buildApprovedDiagnosticRequest('readStoredEmissionDtcs', {}, 'connected');
+  assert.equal(validateApprovedResponse('43 00>', dtcReq), '43 00');
+  assert.equal(validateApprovedResponse('03\r43 01 03 00 00 00>', dtcReq), '43 01 03 00 00 00');
+  assert.equal(validateApprovedResponse('43 03 00 04 20>', dtcReq), '43 03 00 04 20');
 });
 
 test('rejects restricted operations, raw command injection, and extra parameters', () => {

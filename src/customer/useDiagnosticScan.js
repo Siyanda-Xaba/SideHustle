@@ -8,9 +8,9 @@ export function useDiagnosticScan(customVehicle = null) {
     id: 'workshop-vehicle',
     make: 'Workshop',
     model: 'Test Vehicle',
-    year: 'N/A',
+    year: 2024,
     registration: 'DIAGNOSTIC-SCAN',
-    fuelType: 'N/A',
+    fuelType: 'Petrol',
   };
   const [scanResult, setScanResult] = useState(null);
   const [isStartingScan, setIsStartingScan] = useState(false);

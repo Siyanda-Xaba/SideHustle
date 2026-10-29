@@ -214,14 +214,20 @@ function unavailablePidReadings(pids) {
 
 function decodeDtcResponse(rawResponse) {
   const bytes = bytesFrom(rawResponse);
-  if (bytes[0] !== "43" || bytes.length < 3) {
+  if (bytes[0] !== "43" || bytes.length < 2) {
     throw translationError(
-      "A Mode 03 trouble-code response must begin with 43 and include at least one byte pair.",
+      "A Mode 03 trouble-code response must begin with 43 and include at least one byte pair or count byte.",
     );
+  }
+  if (bytes.length === 2) {
+    return [];
   }
   const families = ["P", "C", "B", "U"];
   const dtcs = [];
-  for (let index = 1; index + 1 < bytes.length; index += 2) {
+  // Standard CAN bus Mode 03 has format 43 [count] [DTC1] [DTC2]... (even length)
+  // Legacy ISO 9141 / J1850 Mode 03 has format 43 [DTC1] [DTC2]... (odd length)
+  const startIndex = bytes.length % 2 === 0 ? 2 : 1;
+  for (let index = startIndex; index + 1 < bytes.length; index += 2) {
     const first = Number.parseInt(bytes[index], 16);
     const second = Number.parseInt(bytes[index + 1], 16);
     if (first === 0 && second === 0) continue;

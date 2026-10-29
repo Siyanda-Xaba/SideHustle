@@ -7,6 +7,8 @@ import { useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Linking,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -84,12 +86,11 @@ export default function MechanicDiagnostics() {
   }
 
   function chooseAdapter(candidateList, signal) {
-    if (candidateList.length > 2) {
-      return Promise.reject(
-        new Error(
-          'Several possible adapters are nearby. Move closer to the intended adapter and scan again.'
-        )
-      )
+    if (!candidateList || !candidateList.length) {
+      return Promise.reject(new Error('No OBD adapters found.'))
+    }
+    if (candidateList.length === 1) {
+      return Promise.resolve(candidateList[0].id)
     }
     return new Promise((resolve) => {
       let settled = false
@@ -102,8 +103,11 @@ export default function MechanicDiagnostics() {
       const cancel = () => settle(null)
       if (signal?.aborted) return settle(null)
       signal?.addEventListener('abort', cancel, { once: true })
-      const buttons = candidateList.map((adapter) => ({
-        text: adapter.name,
+      const adapterLabel = (adapter) =>
+        `${adapter.name} (${adapter.transport === 'classic' ? 'Classic' : 'BLE'})`
+      const topCandidates = candidateList.slice(0, 2)
+      const buttons = topCandidates.map((adapter) => ({
+        text: adapterLabel(adapter),
         onPress: () => settle(adapter.id),
       }))
       buttons.push({
@@ -113,7 +117,7 @@ export default function MechanicDiagnostics() {
       })
       Alert.alert(
         'Select your OBD adapter',
-        `${candidateList.map((adapter) => adapter.name).join('\n')}\n\nA Bluetooth name or pairing is not proof of trust. Check the physical adapter and the vehicle before continuing.`,
+        `Found ${candidateList.length} adapters:\n${candidateList.map((a) => `• ${adapterLabel(a)}`).join('\n')}\n\nSelect adapter to connect:`,
         buttons
       )
     })
@@ -436,6 +440,20 @@ export default function MechanicDiagnostics() {
               >
                 {scanError}
               </Text>
+              {Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {})
+                  }}
+                  style={styles.openSettingsButton}
+                >
+                  <MaterialCommunityIcons name="bluetooth" size={14} color="#3B82F6" />
+                  <Text style={styles.openSettingsButtonText}>
+                    Open Bluetooth Settings to Pair
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -1342,6 +1360,22 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
 
+  openSettingsButton: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    alignSelf: 'flex-start',
+  },
+  openSettingsButtonText: {
+    color: '#3B82F6',
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
   dismissButton: {
     width: 32,
     height: 32,

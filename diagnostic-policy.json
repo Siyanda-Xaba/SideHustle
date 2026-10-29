@@ -44,7 +44,7 @@
   },
   "limits": {
     "responseCharacters": 4096,
-    "requestTimeoutMs": 5000,
+    "requestTimeoutMs": 10000,
     "minimumRequestIntervalMs": 100,
     "snapshotIntervalMs": 1000,
     "connectionTimeoutMs": 12000,

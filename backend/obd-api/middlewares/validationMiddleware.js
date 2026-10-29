@@ -78,7 +78,7 @@ export function validateDiagnosticPayload(req, res, next, { allowVehicleId = fal
     }
     if (body[field] !== undefined) {
       const bytes = body[field].trim().split(/\s+/);
-      if (bytes.length < 3 || bytes.length > diagnosticPolicy.operations.readStoredEmissionDtcs.maxResponseBytes
+      if (bytes.length < 2 || bytes.length > diagnosticPolicy.operations.readStoredEmissionDtcs.maxResponseBytes
         || !bytes.every((byte) => /^[0-9A-F]{2}$/i.test(byte)) || bytes[0].toUpperCase() !== "43") {
         return reject(res, req, "Stored DTC data must be a bounded Mode 03 response from the approved read service.");
       }

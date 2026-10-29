@@ -2,7 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CommonSymptomsGrid from '../../src/components/CommonSymptomsGrid';
 import DiagnosisInsightsCard from '../../src/components/DiagnosisInsightsCard';
@@ -23,6 +23,7 @@ export default function CustomerDiagnostics() {
     const { colors } = useTheme();
     const [selectedSymptom, setSelectedSymptom,] = useState(null);
     const { selectedVehicle, isLoadingVehicles, } = useVehicle();
+    const activeVehicle = selectedVehicle || { make: 'Test', model: 'Vehicle', registration: 'TEST-OBD', fuelType: 'Standard', year: 2024 };
     const { diagnosticsData, isLoadingDiagnostics, diagnosticsError, } = useCustomerDiagnostics();
     const { scanResult, isStartingScan, isLive, liveReadings, liveCapturedAt, scanError, connectionState, currentOperation, startScan, stopLive, clearScanResult, } = useDiagnosticScan();
     const { captureStatus, recording, durationMillis, isSubmittingAnalysis, analysisResult, soundDiagnosisError, startRecording, stopRecording, submitRecordingForAnalysis, discardRecording, clearSoundDiagnosisError, clearAnalysisResult, } = useSoundDiagnosis();
@@ -39,7 +40,10 @@ export default function CustomerDiagnostics() {
         ]);
     }
     function chooseAdapter(candidateList, signal) {
-        if (candidateList.length > 2) return Promise.reject(new Error('Several possible adapters are nearby. Move closer to the intended adapter and scan again.'));
+        if (!candidateList || !candidateList.length) return Promise.reject(new Error('No OBD adapters found.'));
+        if (candidateList.length === 1) {
+            return Promise.resolve(candidateList[0].id);
+        }
         return new Promise((resolve) => {
             let settled = false;
             const settle = (id) => {
@@ -51,12 +55,19 @@ export default function CustomerDiagnostics() {
             const cancel = () => settle(null);
             if (signal?.aborted) return settle(null);
             signal?.addEventListener('abort', cancel, { once: true });
-            const buttons = candidateList.map((adapter) => ({
-                text: adapter.name,
+            const adapterLabel = (adapter) => `${adapter.name} (${adapter.transport === 'classic' ? 'Classic' : 'BLE'})`;
+            // Android Alert supports up to 3 buttons (2 choices + Cancel)
+            const topCandidates = candidateList.slice(0, 2);
+            const buttons = topCandidates.map((adapter) => ({
+                text: adapterLabel(adapter),
                 onPress: () => settle(adapter.id),
             }));
             buttons.push({ text: 'Cancel', style: 'cancel', onPress: () => settle(null) });
-            Alert.alert('Select your OBD adapter', `${candidateList.map((adapter) => adapter.name).join('\n')}\n\nA Bluetooth name or pairing is not proof of trust. Check the physical adapter and the vehicle before continuing.`, buttons);
+            Alert.alert(
+                'Select your OBD adapter',
+                `Found ${candidateList.length} adapters:\n${candidateList.map((a) => `• ${adapterLabel(a)}`).join('\n')}\n\nSelect adapter to connect:`,
+                buttons
+            );
         });
     }
     function handleViewSavedScan() {
@@ -110,27 +121,22 @@ export default function CustomerDiagnostics() {
                             {
                                 color: colors.secondaryText,
                             },
-                        ], children: "Loading diagnostics..." })) : !selectedVehicle ? (_jsx(Text, { style: [
-                            styles.message,
-                            {
-                                color: colors.secondaryText,
-                            },
-                        ], children: "No vehicle selected" })) : (_jsxs(_Fragment, { children: [_jsxs(View, { style: styles.vehicleTopRow, children: [_jsxs(View, { children: [_jsxs(Text, { style: [
+                        ], children: "Loading diagnostics..." })) : (_jsxs(_Fragment, { children: [_jsxs(View, { style: styles.vehicleTopRow, children: [_jsxs(View, { children: [_jsxs(Text, { style: [
                                                     styles.vehicleName,
                                                     {
                                                         color: colors.text,
                                                     },
-                                                ], children: [selectedVehicle.make, ' ', selectedVehicle.model] }), _jsx(Text, { style: [
+                                                ], children: [activeVehicle.make, ' ', activeVehicle.model] }), _jsx(Text, { style: [
                                                     styles.registration,
                                                     {
                                                         color: colors.secondaryText,
                                                     },
-                                                ], children: selectedVehicle.registration }), _jsxs(Text, { style: [
+                                                ], children: activeVehicle.registration }), _jsxs(Text, { style: [
                                                     styles.vehicleDetails,
                                                     {
                                                         color: colors.secondaryText,
                                                     },
-                                                ], children: [selectedVehicle.fuelType || 'N/A', " \u2022", ' ', selectedVehicle.year ?? 'N/A'] })] }), _jsx(MaterialCommunityIcons, { name: "car-outline", size: 34, color: colors.accent })] }), _jsxs(View, { style: [
+                                                ], children: [activeVehicle.fuelType || 'Standard', " \u2022", ' ', activeVehicle.year ?? '2024'] })] }), _jsx(MaterialCommunityIcons, { name: "car-outline", size: 34, color: colors.accent })] }), _jsxs(View, { style: [
                                     styles.scanRow,
                                     {
                                         borderTopColor: colors.border,
@@ -225,7 +231,7 @@ export default function CustomerDiagnostics() {
                                         {
                                             color: colors.secondaryText,
                                         },
-                                    ], children: scanError })] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: liveReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: liveReadings, capturedAt: liveCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
+                                    ], children: scanError }), Platform.OS === 'android' && /pair|disconnect|no recognizable/i.test(scanError || '') && !/ignition|computer|ecu/i.test(scanError || '') ? (_jsxs(TouchableOpacity, { activeOpacity: 0.7, onPress: () => { Linking.sendIntent('android.settings.BLUETOOTH_SETTINGS').catch(() => {}); }, style: styles.openSettingsButton, children: [_jsx(MaterialCommunityIcons, { name: "bluetooth", size: 14, color: "#3B82F6" }), _jsx(Text, { style: styles.openSettingsButtonText, children: "Open Bluetooth Settings to Pair" })] })) : null] }), _jsx(TouchableOpacity, { activeOpacity: 0.7, onPress: clearScanResult, accessibilityRole: "button", accessibilityLabel: "Dismiss scan error", style: styles.dismissButton, children: _jsx(MaterialCommunityIcons, { name: "close", size: 19, color: colors.secondaryText }) })] })) : null, _jsx(DiagnosisInsightsCard, { readings: liveReadings, dtcProblems: scanResult?.dtcProblems ?? [], isLive }), _jsx(LiveObdReadingsCard, { readings: liveReadings, capturedAt: liveCapturedAt, isLive: isLive, isStartingScan, connectionState, currentOperation, resultId: scanResult?.resultId, onStop: stopLive, onViewReport: handleViewSavedScan }), _jsx(SoundDiagnosisCard, { captureStatus: captureStatus, durationMillis: recording?.durationMillis ??
                         durationMillis, hasRecording: Boolean(recording), isSubmittingAnalysis: isSubmittingAnalysis, onStartRecording: handleStartSoundRecording, onStopRecording: handleStopSoundRecording, onDiscardRecording: discardRecording, onSubmitForAnalysis: handleSubmitSoundAnalysis }), soundDiagnosisError ? (_jsxs(View, { style: [
                         styles.scanFeedbackCard,
                         {
@@ -416,6 +422,22 @@ const styles = StyleSheet.create({
         marginLeft: 6,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    openSettingsButton: {
+        marginTop: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        backgroundColor: 'rgba(59, 130, 246, 0.12)',
+        alignSelf: 'flex-start',
+    },
+    openSettingsButtonText: {
+        color: '#3B82F6',
+        fontSize: 11.5,
+        fontWeight: '600',
     },
     actionsRow: {
         marginTop: 16,
