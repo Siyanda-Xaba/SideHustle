@@ -1,5 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { Ionicons, MaterialCommunityIcons, } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RoleRouteGuard } from '../../src/auth/RoleRouteGuard';
@@ -8,6 +7,7 @@ import { CustomerFuelProvider } from '../../src/customer/CustomerFuelContext';
 import { CustomerHomeProvider } from '../../src/customer/CustomerHomeContext';
 import { CustomerMarketplaceProvider } from '../../src/customer/CustomerMarketplaceContext';
 import { CustomerProfileProvider } from '../../src/customer/CustomerProfileContext';
+import { homePalette } from '../../src/customer/homePalette';
 import { useTheme } from '../../src/theme/ThemeContext';
 
 export default function CustomerLayout() {
@@ -53,8 +53,26 @@ export default function CustomerLayout() {
                                     },
                                 }}>
                                     <Tabs.Screen name="index" options={{
+                                        tabBarActiveTintColor: homePalette.accent,
+                                        tabBarIcon: ({ color }) => (<Ionicons color={color} name="home-outline" size={24} />),
+                                        tabBarInactiveTintColor: homePalette.secondaryText,
+                                        tabBarStyle: {
+                                            backgroundColor: homePalette.card,
+                                            borderColor: homePalette.border,
+                                            borderCurve: 'continuous',
+                                            borderRadius: 18,
+                                            borderTopWidth: 1,
+                                            borderWidth: 1,
+                                            bottom: Math.max(insets.bottom - 10, 2),
+                                            height: 68,
+                                            left: 16,
+                                            marginHorizontal: 16,
+                                            paddingBottom: 7,
+                                            paddingTop: 7,
+                                            position: 'absolute',
+                                            right: 16,
+                                        },
                                         title: 'Home',
-                                        tabBarIcon: ({ color }) => (<Ionicons name="home-outline" size={24} color={color} />),
                                     }} />
                                     <Tabs.Screen name="diagnostics" options={{
                                         title: 'Diagnostics',

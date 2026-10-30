@@ -1,91 +1,88 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
-export default function PowerShieldCard({ nextOutageTime, onSchedulePress, }) {
-    const { colors } = useTheme();
-    return (_jsxs(View, { style: [
-            styles.card,
-            {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-            },
-        ], children: [_jsxs(View, { style: styles.header, children: [_jsx(Text, { style: [
-                            styles.title,
-                            {
-                                color: colors.text,
-                            },
-                        ], children: "Power Shield" }), _jsx(View, { style: [
-                            styles.shieldIcon,
-                            {
-                                borderColor: colors.accent,
-                            },
-                        ], children: _jsx(MaterialCommunityIcons, { name: "shield-outline", size: 20, color: colors.accent }) })] }), _jsx(Text, { style: [
-                    styles.label,
-                    {
-                        color: colors.secondaryText,
-                    },
-                ], children: "Next outage" }), _jsx(Text, { style: [
-                    styles.time,
-                    {
-                        color: colors.accent,
-                    },
-                ], children: nextOutageTime ?? 'Not available' }), _jsxs(TouchableOpacity, { activeOpacity: 0.75, onPress: onSchedulePress, style: [
-                    styles.button,
-                    {
-                        backgroundColor: colors.accent,
-                    },
-                ], children: [_jsx(MaterialCommunityIcons, { name: "gas-station", size: 17, color: "#000000" }), _jsx(Text, { style: styles.buttonText, children: "Schedule fuel top-up" }), _jsx(Ionicons, { name: "chevron-forward", size: 16, color: "#000000" })] })] }));
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { homePalette as colors } from '../customer/homePalette';
+
+export default function PowerShieldCard({ nextOutageTime, onSchedulePress }) {
+    return (
+        <View style={styles.card}>
+            <View style={styles.header}>
+                <Text style={styles.title}>Power Shield</Text>
+                <MaterialCommunityIcons color={colors.text} name="shield-outline" size={20} />
+            </View>
+            <Text style={styles.label}>Next outage</Text>
+            <Text selectable style={styles.time}>
+                {nextOutageTime ?? 'Not available'}
+            </Text>
+            <TouchableOpacity
+                accessibilityLabel="Schedule fuel top-up"
+                accessibilityRole="button"
+                activeOpacity={0.75}
+                onPress={onSchedulePress}
+                style={styles.button}
+            >
+                <MaterialCommunityIcons color={colors.onAccent} name="gas-station" size={16} />
+                <Text numberOfLines={1} style={styles.buttonText}>
+                    Schedule fuel top-up
+                </Text>
+                <Ionicons color={colors.onAccent} name="chevron-forward" size={16} />
+            </TouchableOpacity>
+        </View>
+    );
 }
+
 const styles = StyleSheet.create({
-    card: {
-        flex: 1,
-        minHeight: 150,
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 12,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    title: {
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    shieldIcon: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    label: {
-        marginTop: 10,
-        fontSize: 10,
-    },
-    time: {
-        marginTop: 2,
-        fontSize: 22,
-        fontWeight: '700',
-    },
     button: {
-        minHeight: 38,
-        marginTop: 12,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        backgroundColor: colors.accent,
+        borderRadius: 14,
+        flexDirection: 'row',
         gap: 6,
+        justifyContent: 'center',
+        marginTop: 18,
+        minHeight: 48,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
     },
     buttonText: {
-        flex: 1,
-        color: '#000000',
-        fontSize: 11,
+        color: colors.onAccent,
+        flexShrink: 1,
+        fontSize: 13,
         fontWeight: '700',
+        lineHeight: 16,
         textAlign: 'center',
+    },
+    card: {
+        backgroundColor: colors.card,
+        borderCurve: 'continuous',
+        borderRadius: 20,
+        boxShadow: '0 10px 24px rgba(0, 0, 0, 0.24)',
+        padding: 18,
+        width: '100%',
+    },
+    header: {
+        alignItems: 'flex-start',
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: 'space-between',
+    },
+    label: {
+        color: colors.secondaryText,
+        fontSize: 12,
+        marginTop: 16,
+    },
+    time: {
+        color: colors.text,
+        fontSize: 20,
+        fontWeight: '700',
+        letterSpacing: -0.3,
+        lineHeight: 24,
+        marginTop: 4,
+    },
+    title: {
+        color: colors.text,
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '700',
+        letterSpacing: -0.2,
     },
 });
